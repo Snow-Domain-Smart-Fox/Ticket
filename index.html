@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Amazing Luogu Ticket</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://cdn.jsdmirror.com/npm/vue@3/dist/vue.global.js"></script>
+	<script src="https://cdn.jsdmirror.cn/npm/@supabase/supabase-js@2"></script>
+	<link rel="stylesheet" href="https://cdn.jsdmirror.cn/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+	<script>
+		tailwind.config = {
+			darkMode: 'class',
+			theme: {
+				extend: {
+					colors: {
+						primary: '#3b82f6',
+						secondary: '#8b5cf6',
+						darkbg: '#0f172a',
+						cardbg: '#1e293b'
+					},
+					animation: {
+						'fade-in': 'fadeIn 0.5s ease-out',
+						'slide-up': 'slideUp 0.5s ease-out',
+					},
+					keyframes: {
+						fadeIn: {
+							'0%': { opacity: '0' },
+							'100%': { opacity: '1' },
+						},
+						slideUp: {
+							'0%': { transform: 'translateY(20px)', opacity: '0' },
+							'100%': { transform: 'translateY(0)', opacity: '1' },
+						}
+					}
+				}
+			}
+		}
+	</script>
+	<style>
+		body {
+			font-family: 'Inter', sans-serif;
+			transition: background-color 0.3s, color 0.3s;
+		}
+
+		.glass {
+			background: rgba(255, 255, 255, 0.7);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(255, 255, 255, 0.2);
+		}
+
+		.dark .glass {
+			background: rgba(30, 41, 59, 0.7);
+			border: 1px solid rgba(255, 255, 255, 0.05);
+		}
+
+		.gradient-text {
+			background: linear-gradient(to right, #3b82f6, #8b5cf6);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+		}
+
+		::-webkit-scrollbar {
+			width: 8px;
+		}
+
+		::-webkit-scrollbar-track {
+			background: transparent;
+		}
+
+		::-webkit-scrollbar-thumb {
+			background: #cbd5e1;
+			border-radius: 4px;
+		}
+
+		.dark ::-webkit-scrollbar-thumb {
+			background: #475569;
+		}
+	</style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 dark:bg-darkbg dark:text-gray-100 min-h-screen flex flex-col">
+
+	<div id="app" class="flex-1 flex flex-col">
+
+		<!-- Navbar -->
+		<nav class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center shadow-sm">
+			<div class="flex items-center gap-3 cursor-pointer" @click="navigate('/')">
+				<i class="fa-solid fa-layer-group text-2xl text-primary"></i>
+				<h1 class="text-xl font-bold tracking-wide">Amazing <span class="gradient-text">Luogu</span> Ticket
+				</h1>
+			</div>
+			<div class="flex items-center gap-4">
+				<button @click="toggleTheme"
+					class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+					<i class="fa-solid" :class="isDark ? 'fa-sun text-yellow-400' : 'fa-moon text-gray-600'"></i>
+				</button>
+				<div v-if="user" class="flex items-center gap-3">
+					<span class="hidden md:inline text-sm font-medium">S 币：<span class="text-green-500 font-bold">{{
+							profile?.s_coins || 0 }}</span></span>
+					<img :src="profile?.avatar_url || 'https://ui-avatars.com/api/?name=User'"
+						class="w-8 h-8 rounded-full border border-gray-300">
+					<button @click="logout" class="text-sm text-red-500 hover:text-red-600 font-medium">退出</button>
+				</div>
+				<div v-else class="flex gap-2">
+					<button @click="navigate('/login')"
+						class="px-4 py-2 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-gray-800 rounded-lg transition">登录</button>
+					<button @click="navigate('/register')"
+						class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-blue-600 shadow-lg shadow-blue-500/30 transition">注册</button>
+				</div>
+			</div>
+		</nav>
+
+		<!-- Main Content -->
+		<main class="flex-1 container mx-auto px-4 py-8 max-w-6xl animate-fade-in">
+
+			<!-- Loading State -->
+			<div v-if="loading" class="flex justify-center items-center h-64">
+				<i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary"></i>
+			</div>
+
+			<!-- Home View -->
+			<div v-else-if="currentRoute === '/'" class="space-y-8">
+				<div class="text-center py-12">
+					<h2 class="text-4xl md:text-5xl font-extrabold mb-4">欢迎回来，<span class="gradient-text">{{
+							profile?.username || '旅行者' }}</span></h2>
+					<p class="text-gray-500 dark:text-gray-400 text-lg">管理您的洛谷服务与工单的一站式平台</p>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+					<div class="glass p-6 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer"
+						@click="navigate('/ticket/list')">
+						<div class="flex items-center justify-between mb-4">
+							<div
+								class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+								<i class="fa-solid fa-ticket text-xl"></i>
+							</div>
+						</div>
+						<h3 class="text-lg font-semibold">工单列表</h3>
+						<p class="text-sm text-gray-500">查看和管理所有的服务请求</p>
+					</div>
+
+					<div class="glass p-6 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer"
+						@click="navigate('/ticket/create')">
+						<div class="flex items-center justify-between mb-4">
+							<div
+								class="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
+								<i class="fa-solid fa-plus text-xl"></i>
+							</div>
+						</div>
+						<h3 class="text-lg font-semibold">新建工单</h3>
+						<p class="text-sm text-gray-500">购买服务或反馈问题</p>
+					</div>
+
+					<div
+						class="glass p-6 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+						<div class="flex items-center justify-between mb-4">
+							<div
+								class="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+								<i class="fa-solid fa-coins text-xl"></i>
+							</div>
+							<span class="text-2xl font-bold text-green-500">{{ profile?.s_coins || 0 }}</span>
+						</div>
+						<h3 class="text-lg font-semibold">S 币余额</h3>
+						<p class="text-sm text-gray-500">用于支付服务费用</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Auth Views (Login/Register) -->
+			<div v-else-if="['/login', '/register'].includes(currentRoute)" class="max-w-md mx-auto mt-10">
+				<div class="glass p-8 rounded-2xl shadow-2xl animate-slide-up">
+					<h2 class="text-2xl font-bold mb-6 text-center">{{ currentRoute === '/login' ? '用户登录' : '注册账号' }}
+					</h2>
+
+					<form @submit.prevent="handleAuth" class="space-y-4">
+						<div v-if="currentRoute === '/register'">
+							<label class="block text-sm font-medium mb-1">用户名</label>
+							<input v-model="authForm.username" type="text" required
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none transition">
+						</div>
+
+						<div v-if="currentRoute === '/register'">
+							<label class="block text-sm font-medium mb-1">洛谷 UID</label>
+							<input v-model="authForm.luogu_uid" type="text" required
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none transition">
+						</div>
+
+						<div>
+							<label class="block text-sm font-medium mb-1">邮箱</label>
+							<input v-model="authForm.email" type="email" required
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none transition">
+						</div>
+
+						<div>
+							<label class="block text-sm font-medium mb-1">密码</label>
+							<input v-model="authForm.password" type="password" required
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none transition">
+						</div>
+
+						<button type="submit"
+							class="w-full py-2 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg hover:opacity-90 transition shadow-lg">
+							{{ currentRoute === '/login' ? '登录' : '注册' }}
+						</button>
+					</form>
+					<p class="mt-4 text-center text-sm text-gray-500">
+						{{ currentRoute === '/login' ? '没有账号？' : '已有账号？' }}
+						<a @click.prevent="navigate(currentRoute === '/login' ? '/register' : '/login')"
+							class="text-primary hover:underline cursor-pointer">点击这里</a>
+					</p>
+				</div>
+			</div>
+
+			<!-- Ticket List View -->
+			<div v-else-if="currentRoute === '/ticket/list'" class="animate-slide-up">
+				<div class="flex justify-between items-center mb-6">
+					<h2 class="text-2xl font-bold">工单列表</h2>
+					<button @click="navigate('/ticket/create')"
+						class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition">
+						<i class="fa-solid fa-plus mr-2"></i>新建工单
+					</button>
+				</div>
+
+				<div class="glass rounded-xl overflow-hidden shadow-lg">
+					<table class="w-full text-left border-collapse">
+						<thead class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 uppercase text-xs">
+							<tr>
+								<th class="p-4">ID</th>
+								<th class="p-4">标题</th>
+								<th class="p-4">类型</th>
+								<th class="p-4">状态</th>
+								<th class="p-4">创建时间</th>
+								<th class="p-4">操作</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+							<tr v-for="ticket in tickets" :key="ticket.id"
+								class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+								<td class="p-4 font-mono text-sm">#{{ ticket.id }}</td>
+								<td class="p-4 font-medium">{{ ticket.title }}</td>
+								<td class="p-4">
+									<span class="px-2 py-1 rounded text-xs font-bold"
+										:class="getTypeColor(ticket.type)">
+										{{ getTypeLabel(ticket.type) }}
+									</span>
+								</td>
+								<td class="p-4">
+									<span class="px-2 py-1 rounded text-xs font-bold"
+										:class="getStatusColor(ticket.status)">
+										{{ getStatusLabel(ticket.status) }}
+									</span>
+								</td>
+								<td class="p-4 text-sm text-gray-500">{{ new
+									Date(ticket.created_at).toLocaleDateString() }}</td>
+								<td class="p-4">
+									<!-- 🔒 博客工单权限检查 -->
+									<button
+										v-if="ticket.type !== 'service_blog' || profile?.is_admin || ticket.user_id === user?.id"
+										@click="navigate(`/ticket/${ticket.id}`)"
+										class="text-primary hover:text-blue-700 font-medium text-sm">
+										查看详情
+									</button>
+									<span v-else class="text-gray-400 text-sm flex items-center gap-1">
+										<i class="fa-solid fa-lock"></i> 仅限管理员/所有者
+									</span>
+								</td>
+							</tr>
+							<tr v-if="tickets.length === 0">
+								<td colspan="6" class="p-8 text-center text-gray-500">暂无工单数据</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Create Ticket View -->
+			<div v-else-if="currentRoute === '/ticket/create'" class="max-w-2xl mx-auto animate-slide-up">
+				<div class="glass p-8 rounded-2xl shadow-2xl">
+					<h2 class="text-2xl font-bold mb-6">新建工单</h2>
+					<form @submit.prevent="createTicket" class="space-y-4">
+						<div>
+							<label class="block text-sm font-medium mb-1">工单标题</label>
+							<input v-model="ticketForm.title" type="text" required
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none">
+						</div>
+
+						<div>
+							<label class="block text-sm font-medium mb-1">工单类型</label>
+							<select v-model="ticketForm.type"
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none">
+								<option value="feedback">问题反馈</option>
+								<option value="service_subdomain">服务购买 - 子域名注册</option>
+								<option value="service_blog">服务购买 - 博客注册</option>
+							</select>
+						</div>
+
+						<!-- 🔧 问题反馈 - 添加详情编辑 -->
+						<div v-if="ticketForm.type === 'feedback'"
+							class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800">
+							<label class="block text-sm font-medium mb-1">问题描述</label>
+							<textarea v-model="ticketForm.details.description" rows="6" placeholder="请详细描述您遇到的问题..."
+								required
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none resize-none"></textarea>
+							<p class="text-xs text-gray-500 mt-1">💡 描述越详细，我们越能快速帮助您解决问题</p>
+						</div>
+
+						<!-- 子域名字段 -->
+						<div v-if="ticketForm.type === 'service_subdomain'"
+							class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+							<label class="block text-sm font-medium mb-1">期望的子域名 (前缀)</label>
+							<input v-model="ticketForm.details.domain" type="text" placeholder="例如：my-blog" required
+								class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800">
+							<p class="text-xs text-gray-500 mt-1">最终域名格式：前缀.luogu-dashboard.com</p>
+						</div>
+
+						<!-- 博客字段 -->
+						<div v-if="ticketForm.type === 'service_blog'"
+							class="space-y-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800">
+							<h4 class="font-bold text-sm text-purple-600 dark:text-purple-400">博客配置信息</h4>
+							<div class="grid grid-cols-2 gap-3">
+								<input v-model="ticketForm.details.username" placeholder="用户名 (必填)" required
+									class="px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+								<input v-model="ticketForm.details.slogan" placeholder="Slogan"
+									class="px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+							</div>
+							<input v-model="ticketForm.details.supabaseurl" placeholder="Supabase URL (必填)" required
+								class="w-full px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+							<input v-model="ticketForm.details.supabaseanonkey" placeholder="Supabase Anon Key (必填)"
+								required class="w-full px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+							<div class="grid grid-cols-2 gap-3">
+								<input v-model="ticketForm.details.headernav" placeholder="顶栏菜单 HTML"
+									class="px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+								<input v-model="ticketForm.details.websiteinfo" placeholder="网站介绍"
+									class="px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+							</div>
+							<textarea v-model="ticketForm.details.sociallinks" placeholder="社交链接 HTML"
+								class="w-full px-3 py-2 rounded border dark:bg-gray-800 text-sm"></textarea>
+							<textarea v-model="ticketForm.details.notice" placeholder="网站公告"
+								class="w-full px-3 py-2 rounded border dark:bg-gray-800 text-sm"></textarea>
+							<div class="flex gap-4 text-sm">
+								<label class="flex items-center gap-2">
+									<input type="checkbox" v-model="ticketForm.details.powermode"> 开启打字效果
+								</label>
+								<label class="flex items-center gap-2">
+									<input type="checkbox" v-model="ticketForm.details.backgroundex"> 开启背景扩展
+								</label>
+							</div>
+							<input v-model="ticketForm.details.greetingConfig" placeholder="问好 JSON"
+								class="w-full px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+							<input v-model="ticketForm.details.avater" placeholder="用户头像 URL"
+								class="w-full px-3 py-2 rounded border dark:bg-gray-800 text-sm">
+						</div>
+
+						<button type="submit"
+							class="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg hover:opacity-90 transition shadow-lg mt-4">
+							提交工单
+						</button>
+					</form>
+				</div>
+			</div>
+
+			<!-- Ticket Detail View -->
+			<div v-else-if="currentRoute.startsWith('/ticket/')" class="animate-slide-up max-w-4xl mx-auto">
+				<button @click="navigate('/ticket/list')"
+					class="mb-4 text-gray-500 hover:text-primary flex items-center gap-2">
+					<i class="fa-solid fa-arrow-left"></i> 返回列表
+				</button>
+
+				<!-- 🔒 权限不足提示 -->
+				<div v-if="currentTicket?.type === 'service_blog' && !profile?.is_admin && currentTicket?.user_id !== user?.id"
+					class="glass p-8 rounded-2xl shadow-lg text-center">
+					<i class="fa-solid fa-lock text-6xl text-gray-400 mb-4"></i>
+					<h2 class="text-2xl font-bold text-gray-600 dark:text-gray-300 mb-2">权限不足</h2>
+					<p class="text-gray-500">博客工单仅管理员或工单所有者可以查看</p>
+					<button @click="navigate('/ticket/list')"
+						class="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">
+						返回列表
+					</button>
+				</div>
+
+				<!-- 正常详情内容 -->
+				<div v-else-if="currentTicket" class="space-y-6">
+					<!-- Header Card -->
+					<div class="glass p-6 rounded-2xl shadow-lg border-l-4"
+						:class="getBorderColor(currentTicket.status)">
+						<div class="flex justify-between items-start">
+							<div>
+								<div class="flex items-center gap-3 mb-2">
+									<h2 class="text-2xl font-bold">{{ currentTicket.title }}</h2>
+									<span
+										class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 dark:bg-gray-700">#{{
+										currentTicket.id }}</span>
+								</div>
+								<div class="flex gap-4 text-sm text-gray-500">
+									<span><i class="fa-regular fa-user mr-1"></i> {{
+										getTicketOwnerName(currentTicket.user_id) }}</span>
+									<span><i class="fa-regular fa-clock mr-1"></i> {{ new
+										Date(currentTicket.created_at).toLocaleString() }}</span>
+								</div>
+							</div>
+							<div class="text-right">
+								<span class="px-3 py-1 rounded-lg text-sm font-bold block mb-2"
+									:class="getStatusColor(currentTicket.status)">
+									{{ getStatusLabel(currentTicket.status) }}
+								</span>
+								<!-- Admin Controls -->
+								<div v-if="profile?.is_admin" class="flex flex-col gap-2 justify-end mt-2">
+									<select v-model="adminStatusUpdate" @change="updateTicketStatus"
+										class="text-xs p-1 rounded border dark:bg-gray-800">
+										<option value="" disabled>修改状态</option>
+										<option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}
+										</option>
+									</select>
+									<!-- S 币修改 - 输入具体数值 -->
+									<div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded px-3 py-2">
+										<span class="text-xs font-bold">S 币调整:</span>
+										<input v-model="adminCoinAmount" type="number" placeholder="如：-5, 10"
+											class="w-24 px-2 py-1 text-sm rounded border dark:bg-gray-700 dark:border-gray-600">
+										<button @click="modifyCoins"
+											class="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600">
+											确认
+										</button>
+									</div>
+								</div>
+								<!-- 导出 JSON 按钮 -->
+								<button @click="exportTicketJSON"
+									class="mt-2 px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 flex items-center gap-1">
+									<i class="fa-solid fa-download"></i> 导出 JSON
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Details Card -->
+					<div class="glass p-6 rounded-2xl shadow-lg">
+						<div class="flex justify-between items-center mb-4 border-b dark:border-gray-700 pb-2">
+							<h3 class="text-lg font-bold">详细信息</h3>
+							<!-- 编辑按钮（仅问题反馈且是所有者或管理员） -->
+							<button v-if="canEditTicket" @click="enableEdit"
+								class="text-primary hover:text-blue-700 text-sm flex items-center gap-1">
+								<i class="fa-solid fa-pen"></i> 编辑
+							</button>
+						</div>
+
+						<!-- 编辑模式 -->
+						<div v-if="isEditing" class="space-y-4">
+							<div>
+								<label class="block text-sm font-medium mb-1">工单标题</label>
+								<input v-model="editForm.title" type="text"
+									class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800">
+							</div>
+							<div v-if="currentTicket.type === 'feedback'">
+								<label class="block text-sm font-medium mb-1">问题描述</label>
+								<textarea v-model="editForm.details.description" rows="4"
+									class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800"></textarea>
+							</div>
+							<div class="flex gap-2">
+								<button @click="saveEdit"
+									class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">保存</button>
+								<button @click="cancelEdit"
+									class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">取消</button>
+							</div>
+						</div>
+
+						<!-- 查看模式 -->
+						<div v-else>
+							<!-- 问题反馈 -->
+							<div v-if="currentTicket.type === 'feedback'" class="space-y-2">
+								<p class="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{{
+									currentTicket.details?.description || '无描述内容' }}</p>
+							</div>
+
+							<!-- 子域名注册 -->
+							<div v-else-if="currentTicket.type === 'service_subdomain'" class="space-y-2">
+								<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">申请子域名</p>
+										<p class="font-mono font-bold">{{ currentTicket.details?.domain }}</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- 博客注册 - 显示所有字段 -->
+							<div v-else-if="currentTicket.type === 'service_blog'" class="space-y-3">
+								<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">用户名</p>
+										<p class="font-bold">{{ currentTicket.details?.username || '-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">Slogan</p>
+										<p class="font-bold">{{ currentTicket.details?.slogan || '-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">Supabase URL</p>
+										<p class="font-mono text-xs break-all">{{ currentTicket.details?.supabaseurl ||
+											'-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">Supabase Anon Key</p>
+										<p class="font-mono text-xs break-all">{{ currentTicket.details?.supabaseanonkey
+											|| '-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">顶栏菜单 HTML</p>
+										<p class="font-mono text-xs break-all">{{ currentTicket.details?.headernav ||
+											'-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">网站介绍</p>
+										<p class="text-sm">{{ currentTicket.details?.websiteinfo || '-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg md:col-span-2">
+										<p class="text-xs text-gray-500">社交链接 HTML</p>
+										<p class="font-mono text-xs break-all">{{ currentTicket.details?.sociallinks ||
+											'-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg md:col-span-2">
+										<p class="text-xs text-gray-500">网站公告</p>
+										<p class="text-sm">{{ currentTicket.details?.notice || '-' }}</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">PowerMode (打字效果)</p>
+										<p class="font-bold"
+											:class="currentTicket.details?.powermode ? 'text-green-500' : 'text-gray-400'">
+											{{ currentTicket.details?.powermode ? '✅ 开启' : '❌ 关闭' }}
+										</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">BackgroundEx (背景扩展)</p>
+										<p class="font-bold"
+											:class="currentTicket.details?.backgroundex ? 'text-green-500' : 'text-gray-400'">
+											{{ currentTicket.details?.backgroundex ? '✅ 开启' : '❌ 关闭' }}
+										</p>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg md:col-span-2">
+										<p class="text-xs text-gray-500">问好配置 (JSON)</p>
+										<pre
+											class="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto max-h-32">{{ formatJSON(currentTicket.details?.greetingConfig) }}</pre>
+									</div>
+									<div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+										<p class="text-xs text-gray-500">用户头像 URL</p>
+										<div class="flex items-center gap-2">
+											<img :src="currentTicket.details?.avater || 'https://ui-avatars.com/api/?name=U'"
+												class="w-8 h-8 rounded-full">
+											<p class="font-mono text-xs break-all">{{ currentTicket.details?.avater ||
+												'-' }}</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Comments Section -->
+					<div class="glass p-6 rounded-2xl shadow-lg">
+						<h3 class="text-lg font-bold mb-4">评论列表</h3>
+						<div class="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2">
+							<div v-for="comment in comments" :key="comment.id" class="flex gap-3">
+								<img :src="getCommenterAvatar(comment.user_id)" class="w-8 h-8 rounded-full mt-1">
+								<div class="flex-1 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none">
+									<div class="flex justify-between items-center mb-1">
+										<span class="text-xs font-bold text-primary">{{
+											getCommenterName(comment.user_id) }}</span>
+										<span class="text-xs text-gray-400">{{ new
+											Date(comment.created_at).toLocaleString() }}</span>
+									</div>
+									<p class="text-sm">{{ comment.content }}</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="flex gap-2">
+							<input v-model="newComment" type="text" placeholder="输入评论内容..."
+								class="flex-1 px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary outline-none">
+							<button @click="postComment"
+								class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition">发送</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- 工单不存在 -->
+				<div v-else class="glass p-8 rounded-2xl shadow-lg text-center">
+					<i class="fa-solid fa-circle-exclamation text-6xl text-red-400 mb-4"></i>
+					<h2 class="text-2xl font-bold text-gray-600 dark:text-gray-300 mb-2">工单不存在</h2>
+					<button @click="navigate('/ticket/list')"
+						class="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">
+						返回列表
+					</button>
+				</div>
+			</div>
+		</main>
+
+		<!-- Footer -->
+		<footer class="text-center py-6 text-gray-400 text-sm">
+			&copy; 2023 Amazing Luogu Ticket. Built with Supabase & Vue.
+		</footer>
+
+	</div>
+
+	<script>
+		const SUPABASE_URL = 'https://tlsufwwanzgacsngbogh.supabase.co';
+		const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsc3Vmd3dhbnpnYWNzbmdib2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNzQ1MDAsImV4cCI6MjA4Nzc1MDUwMH0.A9Z2VhQrSykJcLwXZYkUOArzbt-s4EnUsWtAFfyy-yI';
+		const { createClient } = supabase;
+		const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+		const { createApp } = Vue;
+		createApp({
+			data() {
+				return {
+					loading: true,
+					isDark: false,
+					user: null,
+					profile: null,
+					currentRoute: '/',
+					tickets: [],
+					currentTicket: null,
+					comments: [],
+					allProfilesCache: {},
+					authForm: { email: '', password: '', username: '', luogu_uid: '' },
+					ticketForm: { title: '', type: 'feedback', details: {} },
+					newComment: '',
+					adminStatusUpdate: '',
+					adminCoinAmount: '',
+					isEditing: false,
+					editForm: { title: '', details: {} },
+					statuses: [
+						{ value: 'pending', label: '待处理' },
+						{ value: 'pending_info', label: '待补充' },
+						{ value: 'suspended', label: '挂起' },
+						{ value: 'closed', label: '关单' },
+						{ value: 'resolved', label: '结单' }
+					]
+				}
+			},
+			computed: {
+				ticketCount() {
+					return this.tickets.filter(t => t.user_id === this.user?.id).length;
+				},
+				canEditTicket() {
+					if (this.currentTicket?.type !== 'feedback') return false;
+					return this.user?.id === this.currentTicket?.user_id || this.profile?.is_admin;
+				}
+			},
+			async mounted() {
+				if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+					this.isDark = true;
+					document.documentElement.classList.add('dark');
+				}
+				const { data: sessionData, error: sessionError } = await _supabase.auth.getSession();
+				this.user = sessionData?.session?.user ?? null;
+				if (this.user) {
+					await this.fetchProfile();
+				}
+				_supabase.auth.onAuthStateChange((event, session) => {
+					this.user = session?.user ?? null;
+					if (this.user) {
+						this.fetchProfile();
+					} else {
+						this.profile = null;
+					}
+				});
+				this.handleRoute();
+				window.addEventListener('hashchange', this.handleRoute);
+				this.loading = false;
+			},
+			methods: {
+				toggleTheme() {
+					this.isDark = !this.isDark;
+					if (this.isDark) {
+						document.documentElement.classList.add('dark');
+						localStorage.theme = 'dark';
+					} else {
+						document.documentElement.classList.remove('dark');
+						localStorage.theme = 'light';
+					}
+				},
+				navigate(path) {
+					window.location.hash = '#' + path;
+				},
+				async handleRoute() {
+					const hash = window.location.hash.slice(1) || '/';
+					this.currentRoute = hash;
+					if (hash === '/') {
+					} else if (hash === '/login' || hash === '/register') {
+					} else if (hash === '/ticket/list') {
+						await this.fetchTickets();
+					} else if (hash === '/ticket/create') {
+						this.ticketForm = { title: '', type: 'feedback', details: {} };
+					} else if (hash.startsWith('/ticket/')) {
+						const parts = hash.split('/');
+						if (parts[2]) {
+							await this.fetchTicketDetail(parts[2]);
+						}
+					}
+				},
+				async handleAuth() {
+					try {
+						if (this.currentRoute === '/register') {
+							const { data, error } = await _supabase.auth.signUp({
+								email: this.authForm.email,
+								password: this.authForm.password,
+								options: {
+									data: {
+										username: this.authForm.username,
+										luogu_uid: this.authForm.luogu_uid,
+										avatar_url: `https://ui-avatars.com/api/?name=${this.authForm.username}`
+									}
+								}
+							});
+							if (error) throw error;
+							alert('注册成功！请检查邮箱验证，或直接登录。');
+							this.navigate('/login');
+						} else {
+							const { data, error } = await _supabase.auth.signInWithPassword({
+								email: this.authForm.email,
+								password: this.authForm.password
+							});
+							if (error) throw error;
+							this.user = data?.user ?? null;
+							if (this.user) {
+								await this.fetchProfile();
+							}
+							this.navigate('/');
+						}
+					} catch (e) {
+						alert(e.message);
+					}
+				},
+				async logout() {
+					await _supabase.auth.signOut();
+					this.user = null;
+					this.profile = null;
+					this.navigate('/');
+				},
+				async fetchProfile() {
+					const { data, error } = await _supabase
+						.from('profiles')
+						.select('id, username, luogu_uid, avatar_url, s_coins, is_admin')
+						.eq('id', this.user.id)
+						.limit(1);
+
+					if (!error && data && data.length > 0) {
+						this.profile = data[0];
+					}
+				},
+				async fetchTickets() {
+					const { data, error } = await _supabase
+						.from('tickets')
+						.select('*')
+						.order('created_at', { ascending: false });
+
+					this.tickets = data || [];
+					if (data) {
+						const ids = [...new Set(data.map(t => t.user_id))];
+						await this.fetchProfilesBatch(ids);
+					}
+				},
+				async fetchTicketDetail(id) {
+					const { data: ticket, error } = await _supabase
+						.from('tickets')
+						.select('*')
+						.eq('id', id)
+						.limit(1);
+					this.currentTicket = ticket?.[0] || null;
+					if (this.currentTicket) {
+						if (this.currentTicket.type === 'service_blog') {
+							const isOwner = this.user?.id === this.currentTicket.user_id;
+							const isAdmin = this.profile?.is_admin;
+							if (!isOwner && !isAdmin) {
+								alert('权限不足：博客工单仅管理员或所有者可查看');
+								this.navigate('/ticket/list');
+								return;
+							}
+						}
+						await this.fetchProfilesBatch([this.currentTicket.user_id]);
+					}
+					const { data: comments } = await _supabase
+						.from('ticket_comments')
+						.select('*')
+						.eq('ticket_id', id)
+						.order('created_at', { ascending: true });
+					this.comments = comments || [];
+					if (comments) {
+						const ids = [...new Set(comments.map(c => c.user_id))];
+						await this.fetchProfilesBatch(ids);
+					}
+					this.isEditing = false;
+					this.editForm = { title: '', details: {} };
+				},
+				async fetchProfilesBatch(ids) {
+					const newIds = ids.filter(id => !this.allProfilesCache[id] && id !== this.user?.id);
+					if (newIds.length === 0) return;
+					const { data } = await _supabase
+						.from('profiles')
+						.select('id, username, avatar_url')
+						.in('id', newIds);
+					if (data) {
+						data.forEach(p => this.allProfilesCache[p.id] = p);
+					}
+				},
+				getTicketOwnerName(uid) {
+					if (uid === this.user?.id) return this.profile?.username || '我';
+					return this.allProfilesCache[uid]?.username || '未知用户';
+				},
+				getCommenterName(uid) {
+					if (uid === this.user?.id) return this.profile?.username || '我';
+					return this.allProfilesCache[uid]?.username || '未知用户';
+				},
+				getCommenterAvatar(uid) {
+					if (uid === this.user?.id) return this.profile?.avatar_url;
+					return this.allProfilesCache[uid]?.avatar_url || 'https://ui-avatars.com/api/?name=U';
+				},
+				async createTicket() {
+					if (!this.user) return alert('请先登录');
+					if (this.ticketForm.type === 'feedback' && !this.ticketForm.details?.description?.trim()) {
+						alert('请填写问题描述');
+						return;
+					}
+					const { data, error } = await _supabase
+						.from('tickets')
+						.insert([{
+							user_id: this.user.id,
+							title: this.ticketForm.title,
+							type: this.ticketForm.type,
+							details: this.ticketForm.details
+						}]);
+					if (error) {
+						alert('创建失败：' + error.message);
+					} else {
+						alert('工单创建成功');
+						this.navigate('/ticket/list');
+						this.ticketForm = { title: '', type: 'feedback', details: { description: '' } };
+					}
+				},
+				async postComment() {
+					if (!this.newComment.trim()) return;
+					const { data, error } = await _supabase
+						.from('ticket_comments')
+						.insert([{
+							ticket_id: this.currentTicket.id,
+							user_id: this.user.id,
+							content: this.newComment
+						}]);
+					if (!error) {
+						this.newComment = '';
+						await this.fetchTicketDetail(this.currentTicket.id);
+					}
+				},
+				enableEdit() {
+					this.editForm = {
+						title: this.currentTicket.title,
+						details: JSON.parse(JSON.stringify(this.currentTicket.details || {}))
+					};
+					this.isEditing = true;
+				},
+				cancelEdit() {
+					this.isEditing = false;
+					this.editForm = { title: '', details: {} };
+				},
+				async saveEdit() {
+					const { data, error } = await _supabase
+						.from('tickets')
+						.update({
+							title: this.editForm.title,
+							details: this.editForm.details
+						})
+						.eq('id', this.currentTicket.id);
+
+					if (error) {
+						alert('保存失败：' + error.message);
+					} else {
+						alert('保存成功');
+						this.isEditing = false;
+						await this.fetchTicketDetail(this.currentTicket.id);
+					}
+				},
+				async updateTicketStatus() {
+					if (!this.adminStatusUpdate) return;
+					const { data, error } = await _supabase
+						.from('tickets')
+						.update({ status: this.adminStatusUpdate })
+						.eq('id', this.currentTicket.id);
+					if (!error) {
+						this.currentTicket.status = this.adminStatusUpdate;
+						alert('状态已更新');
+					} else {
+						alert('权限不足或更新失败');
+					}
+				},
+				async modifyCoins() {
+					const amount = parseInt(this.adminCoinAmount);
+					if (isNaN(amount)) {
+						alert('请输入有效的数字');
+						return;
+					}
+					const { data, error } = await _supabase.rpc('update_user_s_coins', {
+						target_user_id: this.currentTicket.user_id,
+						amount: amount
+					});
+					if (error) {
+						alert('操作失败：' + error.message);
+					} else {
+						alert(`成功修改 S 币 ${amount > 0 ? '+' : ''}${amount}`);
+						this.adminCoinAmount = '';
+						if (this.currentTicket.user_id === this.user?.id) {
+							await this.fetchProfile();
+						}
+					}
+				},
+				exportTicketJSON() {
+					const exportData = {
+						ticket_id: this.currentTicket.id,
+						title: this.currentTicket.title,
+						type: this.currentTicket.type,
+						status: this.currentTicket.status,
+						user_id: this.currentTicket.user_id,
+						owner: this.getTicketOwnerName(this.currentTicket.user_id),
+						created_at: this.currentTicket.created_at,
+						details: this.currentTicket.details,
+						comments: this.comments.map(c => ({
+							user: this.getCommenterName(c.user_id),
+							content: c.content,
+							created_at: c.created_at
+						}))
+					};
+					const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `ticket_${this.currentTicket.id}_${this.currentTicket.type}.json`;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+				},
+				formatJSON(jsonStr) {
+					if (!jsonStr) return '-';
+					try {
+						const obj = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+						return JSON.stringify(obj, null, 2);
+					} catch {
+						return jsonStr;
+					}
+				},
+				getTypeLabel(type) {
+					const map = { 'service_subdomain': '子域名', 'service_blog': '博客', 'feedback': '反馈' };
+					return map[type] || type;
+				},
+				getTypeColor(type) {
+					if (type.includes('service')) return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+					return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+				},
+				getStatusLabel(status) {
+					const map = { 'pending': '待处理', 'pending_info': '待补充', 'suspended': '挂起', 'closed': '关单', 'resolved': '结单' };
+					return map[status] || status;
+				},
+				getStatusColor(status) {
+					const map = {
+						'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+						'pending_info': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+						'suspended': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+						'closed': 'bg-gray-500 text-white',
+						'resolved': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+					};
+					return map[status] || 'bg-gray-100';
+				},
+				getBorderColor(status) {
+					const map = {
+						'pending': 'border-yellow-500',
+						'pending_info': 'border-orange-500',
+						'suspended': 'border-red-500',
+						'closed': 'border-gray-500',
+						'resolved': 'border-green-500'
+					};
+					return map[status] || 'border-gray-300';
+				}
+			}
+		}).mount('#app');
+	</script>
+</body>
+
+</html>
